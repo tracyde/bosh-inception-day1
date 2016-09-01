@@ -19,6 +19,10 @@ This is the first of a multi-day bosh inception. The goal of this first day is t
 | 1145 | Bosh Addons (runtime-config)                                                                  |
 | 1200 | Manifest Generation                                                                           |
 
+## Prep
+
+In order to perform the environment creation steps you will need to have access to AWS along with AWS Access and Secret Keys. You will also have to create a key-pair on AWS and have downloaded the resultant pem file.
+
 ## Slide Deck
 
 To run the slide deck go into the `presentation` directory and execute `python -m SimpleHTTPServer`
