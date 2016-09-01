@@ -1,0 +1,152 @@
+---
+name: bosh
+
+bosh_subnet: &boshsubnet REPLACE_ME
+availability_zone: &az REPLACE_ME
+region: &region REPLACE_ME
+s3_region: &s3-region REPLACE_ME
+
+releases:
+- name: bosh
+  url: https://bosh.io/d/github.com/cloudfoundry/bosh?v=257.9
+  sha1: 3d6168823f5a8aa6b7427429bc727103e15e27af
+- name: bosh-aws-cpi
+  url: https://bosh.io/d/github.com/cloudfoundry-incubator/bosh-aws-cpi-release?v=58
+  sha1: e4fc8a5736312c8e89301522fb42177fc3fe7194
+
+resource_pools:
+- name: vms
+  network: private
+  stemcell:
+    url: https://bosh.io/d/stemcells/bosh-aws-xen-hvm-ubuntu-trusty-go_agent?v=3262.9
+    sha1: 9f15831acd034b67f8b608203625562e0c0b464c
+  cloud_properties:
+    instance_type: m3.xlarge
+    ephemeral_disk: {size: 50_000, type: gp2}
+    availability_zone: *az
+    iam_instance_profile: director_profile
+  env:
+    bosh:
+      # goPivotal!
+      # To generate use `mkpasswd -s -m sha-512`
+      password: "$6$KIp3dyo9cY9h8Q$3JokgdxfUzyJRyP6UD8rUHqHpv2Pi1NJSwm3rgUHxHe39GoRBvoWSw4mJqXn1D4PQdmEfHAVBkuLiYXw0FRmn1"
+
+disk_pools:
+- name: disks
+  disk_size: 40_000
+  cloud_properties: {type: gp2}
+
+# Don't forget to change the network prefixes if you did not use 10.10
+networks:
+- name: private
+  type: manual
+  subnets:
+  - range: 10.10.1.0/24 # <-- Change if not using 10.10
+    gateway: 10.10.1.1 # <-- Change if not using 10.10
+    dns: [10.10.1.2] # <-- Change if not using 10.10
+    cloud_properties: {subnet: *boshsubnet}
+
+jobs:
+- name: bosh
+  instances: 1
+
+  templates:
+  - {name: nats, release: bosh}
+  - {name: postgres, release: bosh}
+  - {name: blobstore, release: bosh}
+  - {name: director, release: bosh}
+  - {name: health_monitor, release: bosh}
+  - {name: registry, release: bosh}
+  - {name: aws_cpi, release: bosh-aws-cpi}
+
+  resource_pool: vms
+  persistent_disk_pool: disks
+
+  networks:
+  - name: private
+    static_ips: [10.10.1.6] # <-- Change if not using 10.10
+    default: [dns, gateway]
+
+  properties:
+    nats:
+      address: 127.0.0.1
+      user: nats
+      password: KUpvNuZ3Ksl8a12L
+
+    postgres: &db
+      listen_address: 127.0.0.1
+      host: 127.0.0.1
+      user: postgres
+      password: sGeJqGwPFn1NK8Pw
+      database: bosh
+      adapter: postgres
+
+    registry:
+      address: 10.10.1.6 # <-- Change if not using 10.10
+      host: 10.10.1.6 # <-- Change if not using 10.10
+      db: *db
+      http: {user: admin, password: jA1DCTRIRVQ8x4jk, port: 25777}
+      username: admin
+      password: jA1DCTRIRVQ8x4jk
+      port: 25777
+
+    blobstore:
+      # Can un-comment the below if you want to use S3 as the blobstore.
+      #
+      #provider: s3
+      #s3_force_path_style: true
+      #s3_region: *s3-region
+      #bucket_name: bosh-blobstore
+      credentials_source: env_or_profile
+      address: 10.10.1.6 # <-- Change if not using 10.10
+      port: 25250
+      provider: dav
+      director: {user: director, password: iDqLlFApaThLW66e}
+      agent: {user: agent, password: C466IMxCj2Bj7uFB}
+
+    director:
+      address: 127.0.0.1
+      name: bosh-inception
+      db: *db
+      cpi_job: aws_cpi
+      max_threads: 10
+      user_management:
+        provider: local
+        local:
+          users:
+          - {name: admin, password: admin}
+          - {name: hm, password: hm-password}
+
+    hm:
+      director_account: {user: hm, password: hm-password}
+      resurrector_enabled: true
+
+    aws: &aws
+      credentials_source: env_or_profile
+      default_iam_instance_profile: director_profile
+      default_key_name: bosh
+      default_security_groups: [default, bastion]
+      region: *region
+      connection_options:
+        ca_cert: ~
+
+    agent: {mbus: "nats://nats:KUpvNuZ3Ksl8a12L@10.10.1.6:4222"} # <-- Change if not using 10.10
+
+    ntp: &ntp [0.pool.ntp.org, 1.pool.ntp.org]
+
+cloud_provider:
+  template: {name: aws_cpi, release: bosh-aws-cpi}
+
+  ssh_tunnel:
+    host: 10.10.1.6 # <-- Change if not using 10.10
+    port: 22
+    user: vcap
+    private_key: ~/.ssh/bosh.pem # Path relative to this manifest file
+
+  mbus: "https://mbus:u6kPjYiFncRfMAao@10.10.1.6:6868" # <-- Change if not using 10.10
+
+  properties:
+    aws: *aws
+    agent: {mbus: "https://mbus:u6kPjYiFncRfMAao@0.0.0.0:6868"}
+    blobstore: {provider: local, path: /var/vcap/micro_bosh/data/cache}
+    ntp: *ntp

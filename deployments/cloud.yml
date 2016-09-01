@@ -1,0 +1,71 @@
+private_subnet: &privatesubnet REPLACE_ME
+availability_zone-1: &az1 REPLACE_ME
+
+azs:
+- name: z1
+  cloud_properties: {availability_zone: *az1}
+
+vm_types:
+- name: concourse_standalone
+  cloud_properties:
+    instance_type: m3.large
+    ephemeral_disk: {size: 5000, type: gp2}
+    elbs: [concourse-elb]
+    security_groups: [concourse-sg, default]
+- name: concourse_web
+  cloud_properties:
+    instance_type: m3.medium
+    ephemeral_disk: {size: 3000, type: gp2}
+    elbs: [concourse-elb]
+    security_groups: [concourse-sg, default]
+- name: concourse_db
+  cloud_properties:
+    instance_type: m3.medium
+    ephemeral_disk: {size: 3000, type: gp2}
+    security_groups: [default]
+- name: concourse_worker
+  cloud_properties:
+    instance_type: m3.medium
+    ephemeral_disk: {size: 30000, type: gp2}
+    security_groups: [default]
+- name: default
+  cloud_properties:
+    instance_type: t2.micro
+    ephemeral_disk: {size: 3000, type: gp2}
+- name: large
+  cloud_properties:
+    instance_type: m3.large
+    ephemeral_disk: {size: 30000, type: gp2}
+- name: compilation
+  cloud_properties:
+    instance_type: c4.2xlarge
+    ephemeral_disk: {size: 30000, type: gp2}
+
+disk_types:
+- name: default
+  disk_size: 3000
+  cloud_properties: {type: gp2}
+- name: large
+  disk_size: 50_000
+  cloud_properties: {type: gp2}
+
+networks:
+- name: default
+  type: manual
+  subnets:
+  - range: 10.10.1.0/24 # <-- Change if not using 10.10
+    gateway: 10.10.1.1 # <-- Change if not using 10.10
+    az: z1
+    static: [10.10.1.6] # <-- Change if not using 10.10
+    reserved: [10.10.1.1-10.10.1.5] # <-- Change if not using 10.10
+    dns: [10.10.1.2] # <-- Change if not using 10.10
+    cloud_properties: {subnet: *privatesubnet}
+- name: vip
+  type: vip
+
+compilation:
+  workers: 5
+  reuse_compilation_vms: true
+  az: z1
+  vm_type: compilation
+  network: default

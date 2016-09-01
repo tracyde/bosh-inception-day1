@@ -1,0 +1,5 @@
+environment/.terraform
+environment/terraform.tfvars
+environment/terraform.tfstate.backup
+environment/terraform.tfstate
+environment/terraform.tfplan
