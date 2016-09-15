@@ -7,6 +7,11 @@ variable "aws_region" {
   description = "EC2 Region for the VPC"
   default = "us-east-1"
 }
+
+variable "aws_vpc_name" {
+  default = "cf-vpc"
+}
+
 variable "network" {
 	default = "10.10"
 }
@@ -34,5 +39,19 @@ variable "aws_ubuntu_ami" {
         ap-southeast-2 = "ami-1f117325"
         eu-west-1 = "ami-f6b11181"
         sa-east-1 = "ami-71d2676c"
+    }
+}
+
+variable "aws_nat_ami" {
+    default = {
+        us-east-1 = "ami-4c9e4b24"
+        us-west-1 = "ami-1d2b2958"
+        us-west-2 = "ami-8b6912bb"
+        ap-northeast-1 = "ami-49c29e48"
+        ap-northeast-2 = "ami-0199506f"
+        ap-southeast-1 = "ami-d482da86"
+        ap-southeast-2 = "ami-a164029b"
+        eu-west-1 = "ami-5b60b02c"
+        sa-east-1 = "ami-8b72db96"
     }
 }

@@ -2,7 +2,7 @@
 resource "aws_security_group" "concourse-sg" {
   name        = "concourse-sg"
   description = "Concourse security group"
-  vpc_id      = "${module.vpc.aws_vpc_id}"
+  vpc_id      = "${aws_vpc.default.id}"
   tags {
   Name = "concourse-sg"
   component = "concourse"
@@ -36,7 +36,7 @@ resource "aws_security_group" "concourse-sg" {
 resource "aws_security_group" "elb-sg" {
   name        = "elb-sg"
   description = "ELB security group"
-  vpc_id      = "${module.vpc.aws_vpc_id}"
+  vpc_id      = "${aws_vpc.default.id}"
   tags {
   Name = "elb-sg"
   component = "concourse"
@@ -79,7 +79,7 @@ resource "aws_security_group" "elb-sg" {
 # Create a new load balancer
 resource "aws_elb" "concourse" {
   name = "concourse-elb"
-  subnets = ["${module.vpc.bastion_subnet}"]
+  subnets = ["${aws_subnet.bastion.id}"]
   security_groups = ["${aws_security_group.elb-sg.id}"]
 
   listener {
