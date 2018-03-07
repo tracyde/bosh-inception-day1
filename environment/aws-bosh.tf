@@ -1,5 +1,5 @@
 output "aws_key_path" {
-	value = "${var.aws_key_path}"
+    value = "${var.aws_key_path}"
 }
 
 resource "aws_iam_role" "director" {
@@ -67,47 +67,47 @@ resource "aws_iam_role_policy_attachment" "director-attach" {
 
 resource "aws_iam_instance_profile" "director_profile" {
     name = "director_profile"
-    roles = ["${aws_iam_role.director.name}"]
+    role = "${aws_iam_role.director.name}"
 }
 
 resource "aws_instance" "bastion" {
-  ami = "${lookup(var.aws_ubuntu_ami, var.aws_region)}"
-  iam_instance_profile = "${aws_iam_instance_profile.director_profile.name}"
-  instance_type = "m3.xlarge"
-  key_name = "${var.aws_key_name}"
-  associate_public_ip_address = true
-  security_groups = ["${aws_security_group.bastion.id}"]
-  subnet_id = "${aws_subnet.bastion.id}"
+    ami = "${lookup(var.aws_ubuntu_ami, var.aws_region)}"
+    iam_instance_profile = "${aws_iam_instance_profile.director_profile.name}"
+    instance_type = "m3.xlarge"
+    key_name = "${var.aws_key_name}"
+    associate_public_ip_address = true
+    security_groups = ["${aws_security_group.bastion.id}"]
+    subnet_id = "${aws_subnet.bastion.id}"
 
-  tags {
-   Name = "bastion"
-  }
+    tags {
+        Name = "bastion"
+    }
 
-  connection {
-    user = "ubuntu"
-    key_file = "${var.aws_key_path}"
-  }
+    connection {
+        user = "ubuntu"
+        private_key = "${file(var.aws_key_path)}"
+    }
 
-  provisioner "file" {
-    source = "${path.module}/provision.sh"
-    destination = "/home/ubuntu/provision.sh"
-  }
+    provisioner "file" {
+        source = "${path.module}/provision.sh"
+        destination = "/home/ubuntu/provision.sh"
+    }
 
-  provisioner "file" {
-    source = "${var.aws_key_path}"
-    destination = "/home/ubuntu/.ssh/${var.aws_key_name}.pem"
-  }
+    provisioner "file" {
+        source = "${var.aws_key_path}"
+        destination = "/home/ubuntu/.ssh/${var.aws_key_name}.pem"
+    }
 
-  provisioner "remote-exec" {
-    inline = [
-        "chmod 0400 /home/ubuntu/.ssh/${var.aws_key_name}.pem",
-        "chmod +x /home/ubuntu/provision.sh",
-        "/home/ubuntu/provision.sh ${var.aws_access_key} ${var.aws_secret_key} ${var.aws_region} ${aws_vpc.default.id} ${aws_subnet.microbosh.id} ${var.network} ${aws_instance.bastion.availability_zone} ${aws_instance.bastion.id} ${var.aws_key_name} ${aws_elb.concourse.dns_name}",
-    ]
-  }
+    provisioner "remote-exec" {
+        inline = [
+            "chmod 0400 /home/ubuntu/.ssh/${var.aws_key_name}.pem",
+            "chmod +x /home/ubuntu/provision.sh",
+            "/home/ubuntu/provision.sh ${var.aws_access_key} ${var.aws_secret_key} ${var.aws_region} ${aws_vpc.default.id} ${aws_subnet.microbosh.id} ${var.network} ${aws_instance.bastion.availability_zone} ${aws_instance.bastion.id} ${var.aws_key_name} ${aws_elb.concourse.dns_name}",
+        ]
+    }
 
 }
 
 output "bastion_ip" {
-  value = "${aws_instance.bastion.public_ip}"
+    value = "${aws_instance.bastion.public_ip}"
 }
