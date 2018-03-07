@@ -74,8 +74,8 @@ Current CPI's
 * OpenStack
 * vSphere
 * vCloud
-* SoftLayer (coming soon)
-* Google Compute Engine (coming soon)
+* SoftLayer
+* Google Cloud Platform (GCP)
 * RackHD
 * Local machine using BOSH Lite
 
@@ -85,7 +85,8 @@ Current CPI's
 
 The bosh manifest is a yaml document that describes what actions to perform.
 
-A manifest is similar to a puppet manifest or a chef recipe except the bosh manifest is more detailed since it is responsible for creating, monitoring, destroying, the underlying VM's along with configuring and installing software packages.
+A manifest is similar to a puppet manifest or a chef recipe except the bosh manifest is more detailed since it is 
+responsible for creating, monitoring, destroying, the underlying VM's along with configuring and installing software packages.
 
 ---
 
@@ -104,14 +105,18 @@ A manifest is similar to a puppet manifest or a chef recipe except the bosh mani
   - [terraform-aws-vpc](https://github.com/cloudfoundry-community/terraform-aws-vpc)
   - Creates [subnets](https://github.com/cloudfoundry-community/terraform-aws-vpc#subnets)
 
+Install Terraform on your machine
+
+Run `terraform init` to initialize Terraform with the AWS provider
+
 ```
 terraform get -update
 terraform plan -module-depth=-1 -var-file terraform.tfvars -out terraform.tfplan
+terraform apply "terraform.tfplan"
 ```
 
-```
-terraform apply -var-file terraform.tfvars
-```
+This will create two EC2 instances, bastion and nat. It will also create a VPC called cf-vpc with two subnets, 
+cf-vpc-bastion and cf-vpc-microbosh.
 
 ---
 
